@@ -2,7 +2,7 @@ import { config } from 'dotenv'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { runAgent } from './agent'
-import { assertGitRepo, createWorktree, removeWorktree } from './git'
+import { assertGitRepo, createWorktree, getWorktreeDiff, removeWorktree } from './git'
 import type { AgentEvent, RunAgentsRequest } from '../shared/types'
 
 config()
@@ -42,7 +42,7 @@ async function runSingleAgent(
     worktreePath = await createWorktree(repoPath, agentId)
     emit({ type: 'started', agentId, worktreePath })
 
-    await runAgent(agentId, taskPrompt, worktreePath, emit)
+    await runAgent(agentId, taskPrompt, worktreePath, emit, () => getWorktreeDiff(worktreePath))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     emit({ type: 'error', agentId, message })

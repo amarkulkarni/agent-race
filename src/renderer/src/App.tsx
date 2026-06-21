@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react'
 import AgentCard from './AgentCard'
 import { estimateCost } from '@shared/config'
+import { rankAgents } from '@shared/ranking'
 import { createInitialAgentState, type AgentEvent, type AgentState } from '@shared/types'
 import './App.css'
 
@@ -17,6 +18,8 @@ export default function App(): ReactElement {
     () => agents.reduce((sum, a) => sum + a.cost, 0),
     [agents]
   )
+
+  const ranking = useMemo(() => rankAgents(agents), [agents])
 
   const handleAgentEvent = useCallback((event: AgentEvent) => {
     setAgents((prev) => {
@@ -166,7 +169,14 @@ export default function App(): ReactElement {
         {agents.length === 0 ? (
           <p className="empty-state">Configure a repo and task, then hit Run.</p>
         ) : (
-          agents.map((agent) => <AgentCard key={agent.agentId} agent={agent} />)
+          agents.map((agent) => (
+            <AgentCard
+              key={agent.agentId}
+              agent={agent}
+              rank={ranking.settled ? ranking.rankById[agent.agentId] : undefined}
+              isWinner={ranking.winnerId === agent.agentId}
+            />
+          ))
         )}
       </section>
     </div>

@@ -4,6 +4,9 @@ import type { AgentState } from '@shared/types'
 
 interface AgentCardProps {
   agent: AgentState
+  /** 1-based rank once the race has settled; undefined while running or if unranked. */
+  rank?: number
+  isWinner?: boolean
 }
 
 function formatCost(usd: number): string {
@@ -22,14 +25,21 @@ function liveLatency(agent: AgentState): number {
   return agent.latencyMs
 }
 
-export default function AgentCard({ agent }: AgentCardProps): ReactElement {
-  const statusClass = `agent-card agent-card--${agent.status}`
+export default function AgentCard({ agent, rank, isWinner }: AgentCardProps): ReactElement {
+  const statusClass = `agent-card agent-card--${agent.status}${isWinner ? ' agent-card--winner' : ''}`
 
   return (
     <div className={statusClass}>
       <div className="agent-card__header">
         <h3>Agent {agent.agentId}</h3>
-        <span className={`status-badge status-badge--${agent.status}`}>{agent.status}</span>
+        <div className="agent-card__badges">
+          {rank !== undefined && (
+            <span className={`rank-badge${isWinner ? ' rank-badge--winner' : ''}`}>
+              {isWinner ? '🏆 Winner' : `#${rank}`}
+            </span>
+          )}
+          <span className={`status-badge status-badge--${agent.status}`}>{agent.status}</span>
+        </div>
       </div>
 
       {agent.worktreePath && (

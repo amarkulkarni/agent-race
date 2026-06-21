@@ -36,6 +36,19 @@ export async function removeWorktree(repoPath: string, worktreePath: string): Pr
   }
 }
 
+/**
+ * Compute the unified diff of everything the agent changed in its worktree,
+ * including new files. Stages all changes, then diffs the index against HEAD.
+ */
+export async function getWorktreeDiff(worktreePath: string): Promise<string> {
+  await execFileAsync('git', ['add', '-A'], { cwd: worktreePath })
+  const { stdout } = await execFileAsync('git', ['diff', '--cached'], {
+    cwd: worktreePath,
+    maxBuffer: 10 * 1024 * 1024
+  })
+  return stdout
+}
+
 export async function assertGitRepo(repoPath: string): Promise<void> {
   try {
     await execFileAsync('git', ['rev-parse', '--git-dir'], { cwd: repoPath })

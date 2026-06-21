@@ -140,10 +140,37 @@
   border-color: #ef4444;
 }
 
+.agent-card--winner {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px #fbbf24;
+}
+
 .agent-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.agent-card__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rank-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #2a2f3d;
+  color: #c4c7ce;
+}
+
+.rank-badge--winner {
+  background: #422006;
+  color: #fbbf24;
+  font-weight: 700;
 }
 
 .agent-card__header h3 {

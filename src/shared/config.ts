@@ -1,5 +1,5 @@
 /** Change model here — single source of truth */
-export const MODEL = 'claude-sonnet-4-20250514'
+export const MODEL = 'claude-sonnet-4-6'
 
 /** USD per token — update when MODEL pricing changes */
 export const COST_PER_INPUT_TOKEN = 3 / 1_000_000
