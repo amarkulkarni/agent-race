@@ -58,6 +58,33 @@ Three Electron layers (renderer ↔ preload ↔ main) plus a `shared/` module th
 sides import as the IPC contract. The renderer never touches git, the API key, or the
 filesystem — it only sends a request and consumes a stream of events.
 
+### High-level view
+
+```mermaid
+flowchart LR
+    User([User])
+
+    subgraph App["Agent Race · Electron desktop app"]
+        direction LR
+        UI["🖥️ Dashboard (UI)<br/>configure · watch · rank → 🏆"]
+        Orch["⚙️ Orchestrator<br/>validate · fan out N · relay events"]
+        Runner["🤖 Agent Runner ×N<br/>worktree → tool-loop → diff → test"]
+        UI -->|"run request"| Orch
+        Orch -->|"spawn N"| Runner
+        Runner -.->|"live events"| Orch
+        Orch -.->|"stream"| UI
+    end
+
+    Claude["☁️ Anthropic API"]
+    Repo["🗂️ Git repo + worktrees"]
+
+    User --> UI
+    Runner -->|"coding agent"| Claude
+    Runner -->|"isolate · diff · test"| Repo
+```
+
+### Detailed component view
+
 ```mermaid
 flowchart TB
     User([User])
