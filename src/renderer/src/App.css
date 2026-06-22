@@ -173,6 +173,31 @@
   font-weight: 700;
 }
 
+.test-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #2a2f3d;
+  color: #c4c7ce;
+}
+
+.test-badge--running {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+.test-badge--passed {
+  background: #14532d;
+  color: #86efac;
+}
+
+.test-badge--failed {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
 .agent-card__header h3 {
   font-size: 1rem;
 }
@@ -223,7 +248,8 @@
 }
 
 .agent-card__stream h4,
-.agent-card__diff h4 {
+.agent-card__diff h4,
+.agent-card__test-output h4 {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;

@@ -1,9 +1,14 @@
 export type AgentStatus = 'idle' | 'running' | 'done' | 'failed'
 
+/** Result of running the optional test command in an agent's worktree. */
+export type TestStatus = 'none' | 'running' | 'passed' | 'failed'
+
 export interface RunAgentsRequest {
   repoPath: string
   taskPrompt: string
   agentCount: number
+  /** Optional shell command run in each worktree after the agent finishes (e.g. "npm test"). */
+  testCommand?: string
 }
 
 export type AgentEvent =
@@ -11,6 +16,7 @@ export type AgentEvent =
   | { type: 'token'; agentId: number; text: string }
   | { type: 'usage'; agentId: number; inputTokens: number; outputTokens: number }
   | { type: 'done'; agentId: number; diff: string; latencyMs: number }
+  | { type: 'test'; agentId: number; status: 'running' | 'passed' | 'failed'; output: string }
   | { type: 'error'; agentId: number; message: string }
 
 export interface AgentState {
@@ -23,6 +29,8 @@ export interface AgentState {
   outputTokens: number
   cost: number
   latencyMs: number
+  testStatus: TestStatus
+  testOutput: string
   error: string | null
   startedAt: number | null
 }
@@ -43,6 +51,8 @@ export function createInitialAgentState(agentId: number): AgentState {
     outputTokens: 0,
     cost: 0,
     latencyMs: 0,
+    testStatus: 'none',
+    testOutput: '',
     error: null,
     startedAt: null
   }

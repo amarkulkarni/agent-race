@@ -9,6 +9,7 @@ export default function App(): ReactElement {
   const [repoPath, setRepoPath] = useState('')
   const [taskPrompt, setTaskPrompt] = useState('')
   const [agentCount, setAgentCount] = useState(3)
+  const [testCommand, setTestCommand] = useState('')
   const [agents, setAgents] = useState<AgentState[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
@@ -41,6 +42,8 @@ export default function App(): ReactElement {
           updated.output = ''
           updated.diff = ''
           updated.error = null
+          updated.testStatus = 'none'
+          updated.testOutput = ''
           break
         case 'token':
           updated.output += event.text
@@ -55,6 +58,10 @@ export default function App(): ReactElement {
           updated.diff = event.diff
           updated.latencyMs = event.latencyMs
           updated.startedAt = null
+          break
+        case 'test':
+          updated.testStatus = event.status
+          updated.testOutput = event.output
           break
         case 'error':
           updated.status = 'failed'
@@ -93,7 +100,8 @@ export default function App(): ReactElement {
     const result = await window.agentRace.runAgents({
       repoPath: repoPath.trim(),
       taskPrompt: taskPrompt.trim(),
-      agentCount
+      agentCount,
+      testCommand: testCommand.trim()
     })
 
     if (!result.ok) {
@@ -154,6 +162,17 @@ export default function App(): ReactElement {
             max={10}
             value={agentCount}
             onChange={(e) => setAgentCount(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+            disabled={isRunning}
+          />
+        </label>
+
+        <label>
+          Test command (optional)
+          <input
+            type="text"
+            value={testCommand}
+            onChange={(e) => setTestCommand(e.target.value)}
+            placeholder="e.g. npm test — runs in each worktree; passing ranks higher"
             disabled={isRunning}
           />
         </label>

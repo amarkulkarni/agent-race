@@ -1,9 +1,9 @@
 import type { AgentState } from './types'
 
 export interface RankingResult {
-  /** True once no agent is still running/idle — the ranking is final. */
+  /** True once no agent is still running and no tests are still running — ranking is final. */
   settled: boolean
-  /** agentId of the winner, or null when not settled or nobody produced a diff. */
+  /** agentId of the winner, or null when not settled, nobody produced a diff, or the best diff failed tests. */
   winnerId: number | null
   /** 1-based rank keyed by agentId, for agents that produced a usable diff. */
   rankById: Record<number, number>
@@ -15,14 +15,19 @@ function isRankable(agent: AgentState): boolean {
 }
 
 /**
- * Ordering for rankable agents — lower is better: cheapest wins, ties broken
- * by faster latency, then smaller diff.
- *
- * NOTE: this is a cost/speed heuristic with no correctness signal yet. A
- * cheap-but-wrong diff can outrank a pricier correct one. Adding a test-runner
- * tool (pass/fail per worktree) is the intended way to give this real teeth.
+ * Lower is better. Test outcome dominates: a passing diff always beats an
+ * untested one, which beats a failing one. When test outcome ties (including
+ * when no test command was given, so everyone is 'none'), fall back to cheapest,
+ * then faster, then smaller diff.
  */
+function testRank(agent: AgentState): number {
+  if (agent.testStatus === 'passed') return 0
+  if (agent.testStatus === 'failed') return 2
+  return 1 // 'none' / 'running' — no usable signal
+}
+
 function compareRankable(a: AgentState, b: AgentState): number {
+  if (testRank(a) !== testRank(b)) return testRank(a) - testRank(b)
   if (a.cost !== b.cost) return a.cost - b.cost
   if (a.latencyMs !== b.latencyMs) return a.latencyMs - b.latencyMs
   return a.diff.length - b.diff.length
@@ -30,7 +35,10 @@ function compareRankable(a: AgentState, b: AgentState): number {
 
 export function rankAgents(agents: AgentState[]): RankingResult {
   const settled =
-    agents.length > 0 && agents.every((a) => a.status === 'done' || a.status === 'failed')
+    agents.length > 0 &&
+    agents.every(
+      (a) => (a.status === 'done' || a.status === 'failed') && a.testStatus !== 'running'
+    )
 
   const ranked = agents.filter(isRankable).sort(compareRankable)
 
@@ -39,7 +47,10 @@ export function rankAgents(agents: AgentState[]): RankingResult {
     rankById[agent.agentId] = index + 1
   })
 
-  const winnerId = settled && ranked.length > 0 ? ranked[0].agentId : null
+  // The top-ranked agent wins — unless it failed its tests (i.e. every agent
+  // that produced a diff failed), in which case there is no clean winner.
+  const top = ranked[0]
+  const winnerId = settled && top && top.testStatus !== 'failed' ? top.agentId : null
 
   return { settled, winnerId, rankById }
 }

@@ -3,6 +3,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { runAgent } from './agent'
 import { assertGitRepo, createWorktree, getWorktreeDiff, removeWorktree } from './git'
+import { runTests } from './test-runner'
 import type { AgentEvent, RunAgentsRequest } from '../shared/types'
 
 config()
@@ -34,7 +35,8 @@ function createWindow(): void {
 async function runSingleAgent(
   agentId: number,
   repoPath: string,
-  taskPrompt: string
+  taskPrompt: string,
+  testCommand: string
 ): Promise<void> {
   let worktreePath = ''
 
@@ -43,6 +45,12 @@ async function runSingleAgent(
     emit({ type: 'started', agentId, worktreePath })
 
     await runAgent(agentId, taskPrompt, worktreePath, emit, () => getWorktreeDiff(worktreePath))
+
+    if (testCommand) {
+      emit({ type: 'test', agentId, status: 'running', output: '' })
+      const { passed, output } = await runTests(worktreePath, testCommand)
+      emit({ type: 'test', agentId, status: passed ? 'passed' : 'failed', output })
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     emit({ type: 'error', agentId, message })
@@ -54,7 +62,7 @@ async function runSingleAgent(
 }
 
 async function handleRunAgents(request: RunAgentsRequest): Promise<void> {
-  const { repoPath, taskPrompt, agentCount } = request
+  const { repoPath, taskPrompt, agentCount, testCommand } = request
 
   if (!repoPath.trim()) {
     throw new Error('Repository path is required')
@@ -69,7 +77,9 @@ async function handleRunAgents(request: RunAgentsRequest): Promise<void> {
   await assertGitRepo(repoPath)
 
   const agents = Array.from({ length: agentCount }, (_, i) => i + 1)
-  await Promise.all(agents.map((id) => runSingleAgent(id, repoPath, taskPrompt)))
+  await Promise.all(
+    agents.map((id) => runSingleAgent(id, repoPath, taskPrompt, testCommand?.trim() ?? ''))
+  )
 }
 
 app.whenReady().then(() => {
